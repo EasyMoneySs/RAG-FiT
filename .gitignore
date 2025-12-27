@@ -5,3 +5,4 @@ __pycache__/
 /multirun/
 wandb
 .ipynb_checkpoints
+ragfit.egg-info

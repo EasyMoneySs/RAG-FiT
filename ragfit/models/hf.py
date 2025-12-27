@@ -146,5 +146,8 @@ class HFTrain:
         self.model.config.use_cache = False
         logger.info(f"Loaded model: {self.model}")
 
-        logger.info(f"Initializing LORA based on {lora}")
-        self.model = get_peft_model(self.model, LoraConfig(**lora))
+        if lora:
+            logger.info(f"Initializing LORA based on {lora}")
+            self.model = get_peft_model(self.model, LoraConfig(**lora))
+        else:
+            logger.info("No LORA config provided, training full model")
