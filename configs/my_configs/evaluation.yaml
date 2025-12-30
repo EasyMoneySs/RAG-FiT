@@ -1,0 +1,46 @@
+answer_processor:
+  _target_: ragfit.processing.answer_processors.regex.RegexAnswer
+  capture_pattern: '(\[.*?,])'              #"(?i)<answer>:(.*?)"
+  stopping_pattern:         # "[,.;]"
+
+metrics:
+  # - _target_: ragfit.evaluation.metrics.HFEvaluate
+  #   metric_names: [rouge]
+  # - _target_: ragfit.evaluation.metrics.EM
+  # - _target_: ragfit.evaluation.metrics.StringEM
+  - _target_: ragfit.evaluation.metrics.F1
+  - _target_: ragfit.evaluation.metrics.ListF1
+  - _target_: ragfit.evaluation.metrics.Jaccard
+  - _target_: ragfit.evaluation.metrics.FinalScore
+  # - _target_: ragfit.evaluation.metrics.BERTScore
+    # model: microsoft/deberta-large-mnli
+  # - _target_: ragfit.evaluation.metrics.Semantic
+  #   model: vectara/hallucination_evaluation_model
+  # - _target_: src.evaluation.metrics.Classification
+  #   mapping: {"yes": 1, "no": 0, "maybe": 2}
+  #   else_value: 2
+  # - _target_: ragfit.evaluation.deep.Faithfulness
+  #   azure_endpoint:
+  #   azure_deployment:
+  #   api_version:
+  # - _target_: ragfit.evaluation.deep.Relevancy
+  #   azure_endpoint:
+  #   azure_deployment:
+  #   api_version:
+  #   embeddings: BAAI/bge-small-en-v1.5
+
+
+key_names:
+  generated: output
+  label: target
+  query: query
+  context: context
+
+prefix: qwen2.5-7B_drug_expert_v3
+results_file: ${prefix}_evaluation2.yaml
+generated_file: ${prefix}_test2_output.jsonl
+data_file: ${prefix}_test2_output.jsonl
+limit:
+use_wandb: false
+experiment: qwen2.5-7B_drug_expert_eval 
+wandb_entity: easymoneys357-tsinghua-university

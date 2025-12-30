@@ -1,0 +1,26 @@
+model:
+    _target_: ragfit.models.hf.HFInference
+    model_name_or_path: Qwen/Qwen3-4B-Thinking-2507
+    load_in_4bit: false
+    load_in_8bit: true
+    device_map: auto
+    torch_dtype:
+    trust_remote_code: true
+    instruction: ragfit/processing/prompts/my_instruction/drug_expert.txt
+    instruct_in_prompt: true
+    lora_path: trained_models/qwen3-4B_drug_expert_v2/checkpoint
+    generation:
+        do_sample: false
+        max_new_tokens: 1024
+        max_length:
+        temperature: 0.1
+        top_k: 20
+        top_p:
+        return_full_text: false
+
+data_file: data/processed/drug_processed-main.jsonl
+generated_file: qwen3-4B_drug_expert_output.jsonl
+input_key: my_prompt
+generation_key: output
+target_key: answer
+limit:

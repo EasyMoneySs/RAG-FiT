@@ -60,3 +60,46 @@ class UpdateField(LocalStep):
     def process_item(self, item, index, datasets, **kwargs):
         item[self.input_key] = self.value
         return item
+
+
+class CombineFields(LocalStep):
+    """
+    Class to combine multiple fields into a single string field.
+    """
+
+    def __init__(self, input_keys: list, output_key: str, separator=" ", **kwargs):
+        """
+        Args:
+            input_keys (list): List of keys to combine.
+            output_key (str): Key to store the combined string.
+            separator (str): String to separate the values. Defaults to " ".
+        """
+        super().__init__(**kwargs)
+        self.input_keys = input_keys
+        self.output_key = output_key
+        self.separator = separator
+
+    def process_item(self, item, index, datasets, **kwargs):
+        values = [str(item.get(k, "")) for k in self.input_keys]
+        item[self.output_key] = self.separator.join(values)
+        return item
+
+
+class RemoveFields(LocalStep):
+    """
+    Class to remove fields from the dataset.
+    """
+
+    def __init__(self, keys_to_remove: list, **kwargs):
+        """
+        Args:
+            keys_to_remove (list): List of keys to remove.
+        """
+        super().__init__(**kwargs)
+        self.keys_to_remove = keys_to_remove
+
+    def process_item(self, item, index, datasets, **kwargs):
+        for key in self.keys_to_remove:
+            if key in item:
+                del item[key]
+        return item

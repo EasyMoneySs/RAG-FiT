@@ -8,7 +8,7 @@ from ragfit.processing.pipeline import DataPipeline
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(version_base=None, config_path="./configs", config_name="processing")
+@hydra.main(version_base=None, config_path="./configs/my_configs", config_name="processing-retrieval")
 def main(args):
     logger.info(OmegaConf.to_yaml(args))
 

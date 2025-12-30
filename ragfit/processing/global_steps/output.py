@@ -33,7 +33,7 @@ class OutputData(GlobalStep):
         fname = f"{self.prefix}-{name}.jsonl"
         if self.dir is not None:
             fname = os.path.join(self.dir, fname) if self.dir else fname
-        datasets[dataset_name].to_json(fname, lines=True)
+        datasets[dataset_name].to_json(fname, lines=True, force_ascii=False)
 
 
 class HFHubOutput(GlobalStep):
@@ -43,16 +43,20 @@ class HFHubOutput(GlobalStep):
     Caching is disabled as this step does not manipulate the dataset hence no need for caching.
     """
 
-    def __init__(self, hfhub_tag, private=True, **kwargs):
+    def __init__(self, hfhub_tag, prefix=None, private=True, **kwargs):
         """
         Args:
             hfhub_tag (str): Tag for the Hugging Face Hub.
+            prefix (str, optional): Prefix for the output, used as config_name in HF Hub.
             private (bool): Whether the dataset should be private or not. Default is True.
         """
         super().__init__(**kwargs)
         self.hfhub_tag = hfhub_tag
+        self.prefix = prefix
         self.private = private
         self.cache_step = False
 
     def process(self, dataset_name, datasets, **kwargs):
-        datasets[dataset_name].push_to_hub(self.hfhub_tag, private=self.private)
+        datasets[dataset_name].push_to_hub(
+            self.hfhub_tag, config_name=self.prefix, private=self.private
+        )

@@ -109,6 +109,7 @@ class HFTrain:
         torch_dtype,
         device_map,
         lora: LoraConfig = None,
+        use_lora: bool = True,
         generation=None,
         completion_start: str = "",
         instruction_in_prompt=None,
@@ -121,6 +122,7 @@ class HFTrain:
             torch_dtype: str - torch dtype for the model.
             device_map: dict - device map for the model.
             lora: dict - LoRA adapter config.
+            use_lora: bool - whether to use LoRA.
             generation: dict - generation kwargs.
             completion_start: str - used to find the start of the completion in the prompt.
             instruction_in_prompt: bool - whether to include the instruction in the prompt for models without system role.
@@ -130,7 +132,7 @@ class HFTrain:
         self.instructions_in_prompt = instruction_in_prompt
         self.generation_kwargs = generation
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, **kwargs)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.config = AutoConfig.from_pretrained(self.model_name, **kwargs)
@@ -146,8 +148,8 @@ class HFTrain:
         self.model.config.use_cache = False
         logger.info(f"Loaded model: {self.model}")
 
-        if lora:
+        if lora and use_lora:
             logger.info(f"Initializing LORA based on {lora}")
             self.model = get_peft_model(self.model, LoraConfig(**lora))
         else:
-            logger.info("No LORA config provided, training full model")
+            logger.info("No LORA config provided (or use_lora=False), training full model")

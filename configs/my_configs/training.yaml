@@ -1,0 +1,69 @@
+model:
+    _target_: ragfit.models.hf.HFTrain
+    # model_name_or_path: Qwen/Qwen3-4B-Thinking-2507
+    # model_name_or_path: baichuan-inc/Baichuan2-7B-Chat
+    model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+    trust_remote_code: true
+    attn_implementation: "flash_attention_2"
+    # load_in_4bit: true
+    # load_in_8bit: false
+    torch_dtype:
+    device_map: auto
+    use_lora: true
+    lora:
+        bias: none
+        fan_in_fan_out: false
+        layers_pattern:
+        layers_to_transform:
+        lora_alpha: 64
+        lora_dropout: 0.1
+        peft_type: LORA
+        r: 32
+        target_modules:
+            # - W_pack
+            - q_proj
+            - k_proj
+            - v_proj
+            - o_proj
+        task_type: CAUSAL_LM
+        use_rslora: true
+    completion_start: <|assistant|>
+    instruction_in_prompt:
+    max_sequence_len: 12200
+
+train:
+    output_dir: ./trained_models
+    bf16: true
+    fp16: false
+    # gradient_checkpointing: true
+    gradient_accumulation_steps: 4
+    group_by_length:
+    learning_rate: 2e-5
+    logging_steps: 10
+    lr_scheduler_type: cosine
+    max_steps: -1
+    num_train_epochs: 1
+    per_device_train_batch_size: 1
+    optim: adamw_torch_fused
+    remove_unused_columns: true
+    save_steps: 20000
+    save_total_limit: 2
+    warmup_ratio: 0.03
+    weight_decay: 0.001
+    report_to: wandb
+
+instruction: ragfit/processing/prompts/my_instruction/drug_expert.txt
+template:                       # specify a template file or use chatML format with tokenizer's chat template
+data_file: data/processed/drug_retrieval_v2-train.jsonl
+input_key: my_prompt
+output_key: answer
+resume_checkpoint:              # 训练断点恢复路径; 为空则从头开始
+limit:                        # 仅使用前 N 条样本做调试/小规模实验; 为空则全量数据
+dev_split: 0.1
+shuffle:  true                      # 是否在训练前打乱数据; 为空/false 不打乱, true 打乱
+use_wandb: true
+hfhub_tag: 
+project: ragfit-qwen2.5-7B-drug-expert
+experiment: qwen2.5-7B-drug-expert_v4
+wandb_entity: easymoneys357-tsinghua-university
+dataset_batch_size: 1

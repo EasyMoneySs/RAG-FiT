@@ -32,7 +32,7 @@ def setup_wandb(args: dict):
     return run
 
 
-@hydra.main(version_base=None, config_path="./configs", config_name="evaluation")
+@hydra.main(version_base=None, config_path="./configs/my_configs", config_name="evaluation")
 def main(args):
     logger.info(OmegaConf.to_yaml(args))
 

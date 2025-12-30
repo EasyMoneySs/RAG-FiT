@@ -361,3 +361,165 @@ class Semantic(MetricBase):
         scores = self.model.predict([[input, t] for t in target])
 
         return {"Semantic": max(scores)}
+
+
+class ListF1(MetricBase):
+    """
+    F1, Precision, and Recall for list/set generation tasks.
+    Treats the answer as a set of items and calculates overlap with the ground truth set.
+    """
+
+    def __init__(self, key_names, **kwargs) -> None:
+        super().__init__(key_names, **kwargs)
+        self.local = True
+
+    def _parse_list(self, text):
+        """
+        Parse a string into a set of normalized items.
+        Handles list-like strings "[item1, item2]" or simple comma-separated "item1, item2".
+        """
+        if isinstance(text, list):
+            # Already a list, just normalize strings
+            return set(normalize_text(str(item)) for item in text)
+        
+        text = str(text).strip()
+        # Remove brackets if present
+        if text.startswith("[") and text.endswith("]"):
+            text = text[1:-1]
+            
+        # Split by comma
+        items = [normalize_text(item) for item in text.split(",") if item.strip()]
+        return set(items)
+
+    def measure(self, example: dict):
+        input_text = example[self.field]  # Model output (already extracted by RegexAnswer)
+        target = example[self.target]     # Ground truth
+
+        pred_set = self._parse_list(input_text)
+        
+        # Handle target. It might be a list of strings ["med1", "med2"] 
+        # or a list containing a single string representation of a list ["['med1', 'med2']"]
+        # or just a list of valid alternatives (which we treat as a single ground truth set for now based on user description)
+        
+        # For this specific task (drug list generation), we assume 'target' represents THE correct set of drugs.
+        # If target is [["med1", "med2"]], we flatten it or take the first element if it's nested.
+        # Adjusting logic to be robust: try to form a single ground truth set.
+        
+        true_set = set()
+        if isinstance(target, list):
+            # Check if it's a list of alternatives or the list itself
+            # Heuristic: if elements are strings, assume it's the list of drugs.
+            # If elements are lists, assume it's alternatives (pick first or union? usually just one GT list exists)
+             if len(target) > 0 and isinstance(target[0], list):
+                 true_set = self._parse_list(target[0])
+             else:
+                 # It's likely ["med1", "med2"] directly
+                 true_set = self._parse_list(target)
+        else:
+            true_set = self._parse_list(target)
+
+        # Calculate metrics
+        intersection = len(pred_set & true_set)
+        len_pred = len(pred_set)
+        len_true = len(true_set)
+
+        precision = intersection / len_pred if len_pred > 0 else 0.0
+        recall = intersection / len_true if len_true > 0 else 0.0
+        
+        f1 = 0.0
+        if (precision + recall) > 0:
+            f1 = 2 * (precision * recall) / (precision + recall)
+
+        return {
+            "List-F1": f1,
+            "List-Precision": precision,
+            "List-Recall": recall
+        }
+
+
+class Jaccard(MetricBase):
+    """
+    Jaccard Similarity Coefficient for list/set generation tasks.
+    J(A, B) = |A ∩ B| / |A ∪ B|
+    """
+
+    def __init__(self, key_names, **kwargs) -> None:
+        super().__init__(key_names, **kwargs)
+        self.local = True
+
+    def _parse_list(self, text):
+        """
+        Parse a string into a set of normalized items.
+        Robustly handles Python list strings "['a', 'b']" using ast.literal_eval,
+        and falls back to simple comma splitting for "a, b".
+        """
+        import ast
+        
+        if isinstance(text, list):
+            return set(normalize_text(str(item)) for item in text)
+
+        text = str(text).strip()
+        
+        # 1. Try to parse as a Python literal (list/tuple)
+        # This handles cases like "['Item A', 'Item B']" correctly, including internal commas if quoted.
+        try:
+            parsed = ast.literal_eval(text)
+            if isinstance(parsed, (list, tuple)):
+                return set(normalize_text(str(item)) for item in parsed)
+        except (ValueError, SyntaxError):
+            pass
+            
+        # 2. Fallback: Simple comma separation
+        # This handles cases like "Item A, Item B" (no quotes)
+        # Remove brackets if strictly wrapping the whole string
+        if text.startswith("[") and text.endswith("]"):
+            text = text[1:-1]
+            
+        items = [normalize_text(item) for item in text.split(",") if item.strip()]
+        return set(items)
+
+    def measure(self, example: dict):
+        input_text = example[self.field]  # Model output
+        target = example[self.target]     # Ground truth
+
+        pred_set = self._parse_list(input_text)
+        
+        true_set = set()
+        if isinstance(target, list):
+             if len(target) > 0 and isinstance(target[0], list):
+                 true_set = self._parse_list(target[0])
+             else:
+                 true_set = self._parse_list(target)
+        else:
+            true_set = self._parse_list(target)
+
+        intersection = len(pred_set & true_set)
+        union = len(pred_set | true_set)
+
+        jaccard = intersection / union if union > 0 else 0.0
+
+        return {"Jaccard": jaccard}
+
+class FinalScore(MetricBase):
+    """
+    Final Score as used in ASQA: 0.5 * StringEM + 0.5 * F1
+    """
+
+    def __init__(self, key_names: dict, **kwargs) -> None:
+        """
+        Initialize the Metrics class.
+
+        Args:
+            key_names (dict): A dictionary containing the field names.
+        """
+        super().__init__(key_names, **kwargs)
+        self.jaccard = Jaccard(key_names)
+        self.listf1 = ListF1(key_names)
+        self.local = True
+    
+    def measure(self, example: dict):
+        jaccard_result = self.jaccard.measure(example)
+        listf1_result = self.listf1.measure(example)
+
+        final_score = 0.5 * jaccard_result["Jaccard"] + 0.5 * listf1_result["List-F1"]
+        return {"FinalScore": final_score}

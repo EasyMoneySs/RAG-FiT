@@ -1,0 +1,61 @@
+name: my_processing_pipeline
+cache: false
+output_path: data/processed
+steps:
+    - _target_: ragfit.processing.dataset_loaders.loaders.LocalLoader
+      inputs: main
+      filename: data/raw/rag_medications_test.jsonl
+
+    - _target_: ragfit.processing.global_steps.sampling.ShuffleSelect
+      inputs: main
+      shuffle: 42
+      limit: 
+
+    # - _target_: ragfit.processing.local_steps.context.ContextHandler
+    #   inputs: main
+    #   docs_key: positive_passages
+    #   text_key: text
+
+    # - _target_: ragfit.processing.local_steps.context.DocumentsJoiner
+    #   inputs: main
+    #   docs_key: positive_passages
+
+    - _target_: ragfit.processing.local_steps.formatting.FlattenList
+      inputs: main
+      input_key: answer
+      output_key: answer
+
+    # - _target_: ragfit.processing.global_steps.sampling.FewShot
+    #   inputs: main
+    #   k: 3
+    #   output_key: fewshot_examples   # 从当前数据集中抽取 k 个示例，生成 few-shot 样例供后续提示使用
+
+    # - _target_: ragfit.processing.local_steps.prompter.FewshotPrompter
+    #   inputs: main
+    #   prompt_file: ragfit/processing/prompts/qa-with-answer.txt
+    #   fewshot_key: fewshot_examples
+    #   output_key: fewshot_examples
+    #   mapping:
+    #         question: question
+    #         context: context
+    #         answer: answer
+
+    - _target_: ragfit.processing.local_steps.prompter.TextPrompter
+      inputs: main
+      prompt_file: ragfit/processing/prompts/my_prompts/drug_qa.txt   # 指定提示模板文件，TextPrompter读取模板并用 mapping 字段填充占位符
+      output_key: my_prompt
+      mapping:
+            question: question        # 直接使用数据集中的 question
+            context: context          # 直接使用字符串 context
+            # fewshot: fewshot_examples
+            # answer: answer
+
+    - _target_: ragfit.processing.global_steps.output.OutputData
+      inputs: main
+      prefix: drug_processed_test
+      directory: data/processed
+
+    - _target_: ragfit.processing.global_steps.output.HFHubOutput
+      inputs: main
+      prefix: drug_processed_test
+      hfhub_tag: easymoney357/processed

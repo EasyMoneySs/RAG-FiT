@@ -14,7 +14,8 @@ class TextPrompter(LocalStep):
             output_key (str): Key to store the formatted prompt.
         """
         super().__init__(**kwargs)
-        self.prompt = open(prompt_file).read()
+        # Read prompt template with UTF-8 to keep non-ASCII characters (e.g., Chinese) intact
+        self.prompt = open(prompt_file, encoding="utf-8").read()
         self.mapping = mapping
         self.output_key = output_key
 
@@ -45,7 +46,8 @@ class FewshotPrompter(LocalStep):
             output_key (str): Key to store the formatted fewshot examples.
         """
         super().__init__(**kwargs)
-        self.prompt = open(prompt_file).read()
+        # Read prompt template with UTF-8 to keep non-ASCII characters (e.g., Chinese) intact
+        self.prompt = open(prompt_file, encoding="utf-8").read()
         self.fewshot_key = fewshot_key
         self.mapping = mapping
         self.output_key = output_key

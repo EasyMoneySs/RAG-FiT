@@ -1,0 +1,31 @@
+model:
+    _target_: ragfit.models.vllm.VLLMInference
+    # model_name_or_path: Qwen/Qwen3-4B-Thinking-2507
+    # model_name_or_path: baichuan-inc/Baichuan2-7B-Chat
+    model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+    trust_remote_code: true
+    lora_path: trained_models/qwen2.5-7B-drug-expert_v3/checkpoint
+    instruction: ragfit/processing/prompts/my_instruction/drug_expert.txt
+    instruct_in_prompt: false
+    llm_params:
+        dtype: auto
+        max_model_len: 20000
+        gpu_memory_utilization: 0.6
+        max_lora_rank: 32
+    generation:
+        max_tokens: 128
+        temperature: 0.1
+        top_p: 0.95
+        seed: 42
+        stop: ["\n", "</s>"]
+        repetition_penalty: 1.1
+    num_gpus: 4
+
+data_file: data/processed/drug_retrieval-dev.jsonl
+# generated_file: qwen3-4B_drug_expert_output.jsonl
+generated_file: qwen2.5-7B_drug_expert_v3_test2_output.jsonl
+input_key: my_prompt
+generation_key: output
+target_key: answer
+batch_size: 64
+limit:

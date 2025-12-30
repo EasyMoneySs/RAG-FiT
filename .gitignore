@@ -6,3 +6,10 @@ __pycache__/
 wandb
 .ipynb_checkpoints
 ragfit.egg-info
+# configs/my_configs
+data/
+# tools/qdrant_server
+*_output.jsonl
+*_evaluation*.yaml
+tools/qdrant_server
+trained_models/

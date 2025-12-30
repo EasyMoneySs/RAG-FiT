@@ -6,6 +6,7 @@ model:
     torch_dtype:
     device_map:
     trust_remote_code: true
+    use_lora: true
     lora:
         bias: none
         fan_in_fan_out: false
@@ -52,6 +53,8 @@ resume_checkpoint:
 limit:
 shuffle:
 use_wandb:
+project:
 hfhub_tag:
 experiment: phi-training
 wandb_entity:
+dataset_batch_size: 1

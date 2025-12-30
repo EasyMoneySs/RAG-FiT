@@ -1,0 +1,4 @@
+question:{question}
+下述是患者的病历:
+{context}
+根据病历来推荐药品。
